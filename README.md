@@ -220,9 +220,25 @@ Webpack не создаёт shared chunk — дублирует код в каж
 
 В barrel-кейсе rollup справляется — трейсит через `index.ts` до конкретных файлов и включает только нужные. Shared chunk не создаётся потому что файлы маленькие и не пересекаются между entry.
 
-### Почему barrel ломается в Next.js (webpack)
+### Почему tree shaking ломается в Next.js (webpack)
 
-В чистом webpack barrel работает — scope hoisting + terser справляются. Но в Next.js граница `'use client'` создаёт chunk boundary. Каждый клиентский компонент — отдельная точка входа, и webpack не может объединить модули через эту границу в один скоуп. Barrel тянет весь граф в каждый чанк:
+Проблема не в `'use client'` — на Pages Router без него та же картина. Причина архитектурная: **Next.js создаёт отдельный chunk entry на каждую страницу**.
+
+В Pages Router это делает `next-client-pages-loader`, в App Router — `next-flight-client-entry-loader`. Результат одинаковый: когда `constants-single-file.ts` импортируется из page1, page2, page3 — модуль оказывается referenced из нескольких чанков.
+
+`ModuleConcatenationPlugin` (scope hoisting) **не может заинлайнить модуль, на который ссылаются из разных чанков** — ему пришлось бы дублировать код в каждый entry, а он этого не делает. Вот что webpack говорит если включить plugin вручную:
+
+```
+ModuleConcatenation bailout: Cannot concat with shared/constants-single-file.ts:
+  Module is referenced from different chunks by these modules:
+  app/single/page2/page.tsx, app/single/page3/page.tsx
+```
+
+Без конкатенации модули остаются в отдельных обёртках — terser не видит что экспорты не используются и не может их вырезать.
+
+В чистом webpack те же 3 entry, тот же файл. Но `splitChunks.minSize = 20000` (дефолт) — файл констант маленький, не дотягивает до порога, webpack не выносит его в shared chunk, а **дублирует** в каждый entry. Дублированный код конкатенируется → terser вычищает мёртвое. Next.js так не может — flight/pages loader сразу создаёт отдельные chunk entries, и модули шарятся между ними.
+
+Более того, Next.js **вообще не включает `ModuleConcatenationPlugin`** — в исходниках `webpack-config.js` нет ни одного упоминания `concatenateModules` или `ModuleConcatenationPlugin`. Но даже если включить руками через `next.config.js` — 0 модулей конкатенировано, bailout на каждом из-за multi-chunk references.
 
 ```js
 // next-webpack .next/static/chunks/app/separate/page-....js — ВСЕ 6 маркеров
@@ -231,9 +247,25 @@ let t = "value_b_from_separate_file", _ = { name: "config_b" ... };  // мёрт
 let t = "value_c_from_separate_file", _ = { name: "config_c" ... };  // мёртвый код
 ```
 
-Direct import решает проблему — каждый чанк видит только свой файл.
+Direct import решает проблему — бандлер видит только конкретный файл, shared chunk не создаётся.
 
-Turbopack (Next.js 16) справляется с barrel — трейсит через `index.ts` до конкретных файлов, как rollup. Но single file ломает — scope hoisting не на том уровне.
+Turbopack (Next.js 16) справляется с barrel — трейсит через `index.ts` до конкретных файлов, как rollup. Но single file ломает — та же проблема с shared модулем.
+
+### Можно ли это починить в Next.js?
+
+Теоретически есть три пути, но каждый с компромиссами:
+
+**Дублировать модули в каждый entry** — как делает чистый webpack с маленькими файлами. Тогда concatenation работает, terser вычищает. Но Next.js специально шарит модули между страницами — при навигации page1 → page2 shared chunk уже в кеше браузера. Если дублировать — каждая страница тяжелее, при навигации тот же код грузится заново.
+
+**Tree shaking на уровне графа** — резать неиспользуемые экспорты при построении графа, как rollup. Turbopack так и делает, поэтому barrel у него работает. Но это переписывание core-логики webpack, и single file всё равно не решается — shared модуль содержит экспорты для разных страниц.
+
+**Per-entry копии модуля с нужными экспортами** — webpack создаёт отдельную версию модуля для каждого entry, включая только то что entry использует. Фундаментальное изменение, которого в webpack нет.
+
+На практике проблема решается проще:
+
+- **Маленькие константы и конфиги** — лишние 200 байт мёртвого кода погоды не делают
+- **Большие barrel-ы из npm** (`@mui/icons-material`, `lodash-es`) — Next.js решает через [`optimizePackageImports`](https://nextjs.org/docs/app/api-reference/config/next-config-js/optimizePackageImports), который переписывает `import { Add } from '@mui/icons-material'` → `import Add from '@mui/icons-material/Add'`
+- **Свои barrel-ы в проекте** — direct import или разбивай barrel на мелкие группы по фичам
 
 ### Что с rspack
 
@@ -382,7 +414,7 @@ npx webpack --config webpack.config.spa.js
 
 **Rollup и vite ломаются на single file, но справляются с barrel.** Когда один файл импортируется из нескольких entry, rollup выносит его в shared chunk со всеми экспортами. В barrel-кейсе файлы маленькие и не пересекаются — shared chunk не создаётся.
 
-**Next.js (webpack) ломает barrel из-за `'use client'`.** Граница клиентского компонента мешает scope hoisting. Чистый webpack справляется, но через Next.js — нет. Turbopack (Next.js 16) наоборот — barrel обрабатывает, но single file ломает.
+**Next.js (webpack) ломает tree shaking из-за multi-entry архитектуры.** Каждая страница — отдельный chunk entry (и в App Router, и в Pages Router). Модули, на которые ссылаются из разных чанков, не могут быть сконкатенированы — `ModuleConcatenationPlugin` не включён, а даже если включить вручную — bailout на каждом модуле. `'use client'` тут ни при чём. Turbopack (Next.js 16) решает barrel через tree shaking на уровне графа, но single file всё равно ломает.
 
 **Прямые импорты решают проблему у всех.** `import { X } from './constants/a'` вместо `import { X } from './constants'` — и мёртвый код не попадает в бандл ни в одном из 7 бандлеров.
 
