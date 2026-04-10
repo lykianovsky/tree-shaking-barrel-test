@@ -1,0 +1,3 @@
+import { CONSTANT_A, CONFIG_A } from '../../../shared/constants-separate/a'
+
+console.log('Page 1:', CONSTANT_A, CONFIG_A)

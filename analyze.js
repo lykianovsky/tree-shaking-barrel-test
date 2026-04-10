@@ -19,15 +19,18 @@ const TREE_SHAKING_MARKERS = [
 
 const SINGLE_FILE_ORIGIN_MARKER = 'single_file'
 const SEPARATE_FILE_ORIGIN_MARKER = 'separate_file'
+const DIRECT_FILE_ORIGIN_MARKER = 'direct_file'
 
 const EVariant = {
   SINGLE: 'single',
   SEPARATE: 'separate',
+  DIRECT: 'direct',
 }
 
 const VARIANT_LABELS = {
   [EVariant.SINGLE]: 'ОДИН ФАЙЛ',
   [EVariant.SEPARATE]: 'ОТДЕЛЬНЫЕ ФАЙЛЫ (barrel)',
+  [EVariant.DIRECT]: 'ПРЯМОЙ ИМПОРТ (без barrel)',
 }
 
 const EFileType = {
@@ -85,12 +88,16 @@ function analyzeDirectory(directory) {
   return findJavaScriptFiles(directory).map(analyzeFile)
 }
 
-function analyzeNextChunks(directory, originMarker) {
+function analyzeNextChunks(directory, originMarker, excludeMarker) {
   return findJavaScriptFiles(directory)
     .map(analyzeFile)
     .filter((file) => {
-      return file.markers.length > 0
-        && file.content.includes(originMarker)
+      if (file.markers.length === 0) return false
+      if (!file.content.includes(originMarker)) return false
+      if (excludeMarker && file.content.includes(excludeMarker)) {
+        return false
+      }
+      return true
     })
 }
 
@@ -159,6 +166,8 @@ const BUNDLER_CONFIGS = [
         buildStandardAnalyzer('webpack', 'single'),
       [EVariant.SEPARATE]:
         buildStandardAnalyzer('webpack', 'separate'),
+      [EVariant.DIRECT]:
+        buildStandardAnalyzer('webpack', 'direct'),
     },
   },
   {
@@ -171,6 +180,8 @@ const BUNDLER_CONFIGS = [
         buildStandardAnalyzer('rspack', 'single'),
       [EVariant.SEPARATE]:
         buildStandardAnalyzer('rspack', 'separate'),
+      [EVariant.DIRECT]:
+        buildStandardAnalyzer('rspack', 'direct'),
     },
   },
   {
@@ -183,6 +194,8 @@ const BUNDLER_CONFIGS = [
         buildStandardAnalyzer('rollup', 'single'),
       [EVariant.SEPARATE]:
         buildStandardAnalyzer('rollup', 'separate'),
+      [EVariant.DIRECT]:
+        buildStandardAnalyzer('rollup', 'direct'),
     },
   },
   {
@@ -195,6 +208,8 @@ const BUNDLER_CONFIGS = [
         buildStandardAnalyzer('vite', 'single'),
       [EVariant.SEPARATE]:
         buildStandardAnalyzer('vite', 'separate'),
+      [EVariant.DIRECT]:
+        buildStandardAnalyzer('vite', 'direct'),
     },
   },
   {
@@ -207,6 +222,8 @@ const BUNDLER_CONFIGS = [
         buildStandardAnalyzer('esbuild', 'single'),
       [EVariant.SEPARATE]:
         buildStandardAnalyzer('esbuild', 'separate'),
+      [EVariant.DIRECT]:
+        buildStandardAnalyzer('esbuild', 'direct'),
     },
   },
   {
@@ -226,6 +243,13 @@ const BUNDLER_CONFIGS = [
           'next-webpack', '.next', 'static', 'chunks',
         ),
         SEPARATE_FILE_ORIGIN_MARKER,
+        DIRECT_FILE_ORIGIN_MARKER,
+      ),
+      [EVariant.DIRECT]: () => analyzeNextChunks(
+        buildBundlerPath(
+          'next-webpack', '.next', 'static', 'chunks',
+        ),
+        DIRECT_FILE_ORIGIN_MARKER,
       ),
     },
   },
@@ -246,6 +270,13 @@ const BUNDLER_CONFIGS = [
           'next-turbopack', '.next', 'static', 'chunks',
         ),
         SEPARATE_FILE_ORIGIN_MARKER,
+        DIRECT_FILE_ORIGIN_MARKER,
+      ),
+      [EVariant.DIRECT]: () => analyzeNextChunks(
+        buildBundlerPath(
+          'next-turbopack', '.next', 'static', 'chunks',
+        ),
+        DIRECT_FILE_ORIGIN_MARKER,
       ),
     },
   },
@@ -402,6 +433,8 @@ function buildSummaryTable(buildTimesMap) {
     'Инлайн',
     'Separate',
     'Инлайн',
+    'Direct',
+    'Инлайн',
   ]
 
   const rows = BUNDLER_CONFIGS.map((bundlerConfig) => {
@@ -409,6 +442,8 @@ function buildSummaryTable(buildTimesMap) {
       bundlerConfig.analyzers[EVariant.SINGLE]()
     const separateFiles =
       bundlerConfig.analyzers[EVariant.SEPARATE]()
+    const directFiles =
+      bundlerConfig.analyzers[EVariant.DIRECT]()
 
     return [
       bundlerConfig.name,
@@ -417,6 +452,8 @@ function buildSummaryTable(buildTimesMap) {
       checkIsInlined(singleFiles) ? '✅' : '❌',
       formatSize(calculateTotalSize(separateFiles)),
       checkIsInlined(separateFiles) ? '✅' : '❌',
+      formatSize(calculateTotalSize(directFiles)),
+      checkIsInlined(directFiles) ? '✅' : '❌',
     ]
   })
 
@@ -425,6 +462,9 @@ function buildSummaryTable(buildTimesMap) {
     '',
     '  Инлайн ✅ = каждая страница содержит только свои данные',
     '  Инлайн ❌ = лишние экспорты попадают в бандл',
+    '  Single = один файл со всеми экспортами',
+    '  Separate = barrel (index.ts re-export)',
+    '  Direct = прямой импорт из отдельных файлов',
   ].join('\n')
 
   return table + '\n' + legend
@@ -469,7 +509,7 @@ function runAnalysisPhase(buildTimesMap) {
     buildSpeedChart(buildTimesMap),
   )
 
-  for (const variant of [EVariant.SINGLE, EVariant.SEPARATE]) {
+  for (const variant of [EVariant.SINGLE, EVariant.SEPARATE, EVariant.DIRECT]) {
     printSection(
       `TREE SHAKING: ${VARIANT_LABELS[variant]}`,
     )

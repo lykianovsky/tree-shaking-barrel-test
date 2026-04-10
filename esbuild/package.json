@@ -5,7 +5,8 @@
   "scripts": {
     "build:single": "node build.single.js",
     "build:separate": "node build.separate.js",
-    "build": "rm -rf dist && npm run build:single && npm run build:separate"
+    "build:direct": "node build.direct.js",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate && npm run build:direct"
   },
   "devDependencies": {
     "esbuild": "^0.28"

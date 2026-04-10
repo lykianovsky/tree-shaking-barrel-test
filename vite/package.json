@@ -6,7 +6,8 @@
   "scripts": {
     "build:single": "vite build --config vite.config.single.ts",
     "build:separate": "vite build --config vite.config.separate.ts",
-    "build": "rm -rf dist && npm run build:single && npm run build:separate"
+    "build:direct": "vite build --config vite.config.direct.ts",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate && npm run build:direct"
   },
   "devDependencies": {
     "typescript": "^5",

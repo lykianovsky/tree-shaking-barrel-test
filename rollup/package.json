@@ -6,7 +6,8 @@
   "scripts": {
     "build:single": "rollup --config rollup.config.single.js",
     "build:separate": "rollup --config rollup.config.separate.js",
-    "build": "rm -rf dist && npm run build:single && npm run build:separate"
+    "build:direct": "rollup --config rollup.config.direct.js",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate && npm run build:direct"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16",

@@ -5,7 +5,8 @@
   "scripts": {
     "build:single": "rspack build --config rspack.config.single.js",
     "build:separate": "rspack build --config rspack.config.separate.js",
-    "build": "rm -rf dist && npm run build:single && npm run build:separate"
+    "build:direct": "rspack build --config rspack.config.direct.js",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate && npm run build:direct"
   },
   "devDependencies": {
     "@rspack/cli": "^1",
