@@ -1,0 +1,22 @@
+{
+  "name": "test-rollup",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build:single": "rollup --config rollup.config.single.js",
+    "build:separate": "rollup --config rollup.config.separate.js",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16",
+    "@rollup/plugin-typescript": "^12",
+    "rollup": "^4",
+    "tslib": "^2",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@rollup/plugin-terser": "^1.0.0",
+    "terser": "^5.46.1"
+  }
+}

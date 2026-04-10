@@ -1,0 +1,13 @@
+{
+  "name": "test-esbuild",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "build:single": "node build.single.js",
+    "build:separate": "node build.separate.js",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28"
+  }
+}

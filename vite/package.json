@@ -1,0 +1,18 @@
+{
+  "name": "test-vite",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build:single": "vite build --config vite.config.single.ts",
+    "build:separate": "vite build --config vite.config.separate.ts",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "vite": "^8"
+  },
+  "dependencies": {
+    "terser": "^5.46.1"
+  }
+}

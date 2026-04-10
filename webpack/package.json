@@ -1,0 +1,17 @@
+{
+  "name": "test-webpack",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "build:single": "webpack --config webpack.config.single.js",
+    "build:separate": "webpack --config webpack.config.separate.js",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate",
+    "analyze": "echo '=== SINGLE FILE ===' && echo '--- page1 chunk ---' && cat dist/single/page1.js 2>/dev/null && echo '' && echo '--- page2 chunk ---' && cat dist/single/page2.js 2>/dev/null && echo '' && echo '--- shared chunks ---' && ls dist/single/*.js 2>/dev/null && echo '' && echo '=== SEPARATE FILES ===' && echo '--- page1 chunk ---' && cat dist/separate/page1.js 2>/dev/null && echo '' && echo '--- page2 chunk ---' && cat dist/separate/page2.js 2>/dev/null && echo '' && echo '--- shared chunks ---' && ls dist/separate/*.js 2>/dev/null"
+  },
+  "devDependencies": {
+    "webpack": "^5",
+    "webpack-cli": "^7",
+    "ts-loader": "^9",
+    "typescript": "^5"
+  }
+}
