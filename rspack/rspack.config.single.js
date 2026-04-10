@@ -12,10 +12,8 @@ module.exports = {
     path: path.resolve(__dirname, 'dist/single'),
     clean: true,
   },
-  module: {
-    rules: [{ test: /\.ts$/, use: 'ts-loader', exclude: /node_modules/ }],
-  },
   resolve: {
     extensions: ['.ts', '.js'],
   },
+  devtool: false,
 }

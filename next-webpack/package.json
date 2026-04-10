@@ -1,11 +1,9 @@
 {
-  "name": "test-turbopack",
+  "name": "test-next-webpack",
   "private": true,
   "sideEffects": false,
   "scripts": {
-    "build:webpack": "BUNDLER=webpack next build",
-    "build:turbo": "next build --turbopack",
-    "build": "rm -rf .next && npm run build:turbo"
+    "build": "rm -rf .next && next build"
   },
   "dependencies": {
     "next": "^16",

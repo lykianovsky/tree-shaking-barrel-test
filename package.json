@@ -1,0 +1,12 @@
+{
+  "name": "tree-shaking-test",
+  "private": true,
+  "scripts": {
+    "install:all": "pnpm install",
+    "build:all": "node analyze.js",
+    "analyze": "node analyze.js"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
+  }
+}

@@ -12,10 +12,7 @@ esbuild.build({
   outdir: 'dist/separate',
   minify: true,
   treeShaking: true,
-  mangleProps: /^_/,
   legalComments: 'none',
   drop: ['debugger'],
-  pure: [],
-  ignoreAnnotations: false,
   chunkNames: 'shared-[name]-[hash]',
 }).then(() => console.log('esbuild separate: done'))

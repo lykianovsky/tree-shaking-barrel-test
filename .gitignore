@@ -4,4 +4,5 @@ dist
 .idea
 *.tsbuildinfo
 package-lock.json
+pnpm-lock.yaml
 next-env.d.ts

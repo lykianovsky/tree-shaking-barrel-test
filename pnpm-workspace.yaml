@@ -1,0 +1,8 @@
+packages:
+  - webpack
+  - rspack
+  - rollup
+  - vite
+  - esbuild
+  - next-webpack
+  - next-turbopack

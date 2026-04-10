@@ -1,0 +1,15 @@
+{
+  "name": "test-rspack",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "build:single": "rspack build --config rspack.config.single.js",
+    "build:separate": "rspack build --config rspack.config.separate.js",
+    "build": "rm -rf dist && npm run build:single && npm run build:separate"
+  },
+  "devDependencies": {
+    "@rspack/cli": "^1",
+    "@rspack/core": "^1",
+    "typescript": "^5"
+  }
+}
