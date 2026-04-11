@@ -76,7 +76,7 @@ import { CONSTANT_A, CONFIG_A } from '../shared/constants-separate/a'
 - **webpack 5** — scope hoisting + terser
 - **rspack 1** — webpack на Rust, тот же API
 - **rollup 4** — заточен под ES-модули и tree shaking
-- **vite 8** — rollup под капотом для production-сборки
+- **vite 8** — rolldown под капотом для production-сборки
 - **esbuild 0.28** — написан на Go, самый быстрый
 - **Next.js 15 (webpack)** — Next.js с webpack под капотом
 - **Next.js 16 (Turbopack)** — Next.js с Turbopack по умолчанию
@@ -289,5 +289,3 @@ module.exports = {
 Но у меня остался открытый вопрос. Webpack пошёл по пути scope hoisting + terser — дублирует модули, потом вычищает мёртвое. Rollup, vite, esbuild пошли другим путём — tree shaking на уровне графа, shared chunks вместо дублирования. Почему? Есть ли фундаментальная причина, по которой другие бандлеры не пошли по пути webpack? Или это просто разные компромиссы? И можно ли совместить лучшее из обоих подходов — tree shaking на уровне графа без shared chunks с мёртвым кодом?
 
 Если вы работаете над бандлерами или глубоко копали эту тему — буду рад услышать ваше мнение в комментариях.
-
-Репозиторий с лабораторной: [github.com/lykianovsky/tree-shaking-barrel-test](https://github.com/lykianovsky/tree-shaking-barrel-test)
